@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_cors import CORS
+from flask_restx import Api, Resource, fields
 from database_handler import Todos
 
 app = Flask(__name__)
+api = Api(app, title="App Todos", description="Backend aplicativo de To-dos")
 db = Todos()
 
 CORS(
@@ -16,13 +18,36 @@ CORS(
     },
 )
 
+task_model = api.model(
+    "Task",
+    {
+        "id": fields.Integer,
+        "titulo": fields.String,
+        "descricao": fields.String,
+        "status": fields.String(enum=["pendente", "concluida"]),
+        "dataCriacao": fields.String,
+    },
+)
 
-@app.route("/tasks", methods=["GET"])
-def get_tasks():
-    todos = db.get_todos()
-    response = {
-        "status": 200,
-        "values": [
+task_input = api.model(
+    "TaskInput",
+    {
+        "titulo": fields.String(required=True),
+        "descricao": fields.String(required=True),
+        "status": fields.String(
+            required=True,
+            enum=["pendente", "concluida"],
+        ),
+    },
+)
+
+
+@api.route("/tasks")
+class Tasks(Resource):
+    @api.marshal_list_with(task_model)
+    def get(self):
+        todos = db.get_todos()
+        return [
             {
                 "id": todo.id,
                 "titulo": todo.titulo,
@@ -31,42 +56,35 @@ def get_tasks():
                 "dataCriacao": todo.data_criacao,
             }
             for todo in todos
-        ],
-    }
-    return jsonify(response)
+        ]
+
+    @api.expect(task_input)
+    def post(self):
+        data = request.get_json()
+        db.insert(
+            titulo=data["titulo"],
+            descricao=data["descricao"],
+            is_concluida=data["status"] == "concluida",
+        )
+        return {"status": 200}, 201
 
 
-@app.route("/tasks", methods=["POST"])
-def create_task():
-    data = request.get_json()
+@api.route("/tasks/<int:id>")
+class Task(Resource):
+    @api.expect(task_input)
+    def put(self, id):
+        data = request.get_json()
+        db.update(
+            id=id,
+            novo_titulo=data.get("titulo"),
+            nova_descricao=data.get("descricao"),
+            is_concluida=data.get("status"),
+        )
+        return {"status": 200}
 
-    db.insert(titulo=data["titulo"], descricao=data["descricao"], is_concluida=data["status"] == "concluida")
-
-    return jsonify({"status": 200}), 201
-
-
-@app.route("/tasks/<int:id>", methods=["PUT"])
-def update_task(id):
-    data = request.get_json()
-
-    db.update(
-        id=id, novo_titulo=data.get("titulo"), nova_descricao=data.get("descricao"), is_concluida=data.get("status")
-    )
-
-    return jsonify({"status": 200})
-
-
-@app.route("/tasks/<int:id>", methods=["DELETE"])
-def delete_task(id):
-    db.delete(id)
-    return jsonify({"status": 200})
-
-
-# For cors
-@app.route("/tasks/<int:id>", methods=["OPTIONS"])
-@app.route("/tasks", methods=["OPTIONS"])
-def handle_options(id=None):
-    return "", 204
+    def delete(self, id):
+        db.delete(id)
+        return {"status": 200}
 
 
 if __name__ == "__main__":
