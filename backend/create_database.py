@@ -4,14 +4,14 @@ connection = sqlite3.connect(r"todos.db")
 
 cur = connection.cursor()
 
-# Passing id explicitly with autoincrement to prevent
+# if explicitly with autoincrement prevents
 # reuse of ROWIDs from previously deleted rows.
 #
 # data_criacao set as utc as it is best practice, convert when presenting
 cur.execute(
     """
     CREATE TABLE IF NOT EXISTS todos( 
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY,
         titulo TEXT,
         descricao TEXT,
         status TEXT CHECK(status IN ('pendente', 'concluida')),
