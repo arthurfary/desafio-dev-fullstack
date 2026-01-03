@@ -19,7 +19,7 @@ export default function App() {
     try {
       const response = await fetch(API_URL);
       const data = await response.json();
-      setTodos(data.values);
+      setTodos(data);
     } catch (error) {
       console.error("Erro ao carregar tarefas:", error);
     }

@@ -10,25 +10,26 @@ data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
 """
 
 
-# Class TODO, everything is explicitly typed here so this con
-# be reused very clearly along the code
 class Todo:
-    def __init__(self, id: int, titulo: str, descricao: str, status: str, data_criacao: datetime) -> None:
-        self.id: int = id
-        self.titulo: str = titulo
-        self.descricao: str = descricao
-        self.status: str = status
-        self.data_criacao: datetime = data_criacao
+    def __init__(
+        self,
+        id: int,
+        titulo: str,
+        descricao: str,
+        status: str,
+        data_criacao: datetime,
+    ) -> None:
+        self.id = id
+        self.titulo = titulo
+        self.descricao = descricao
+        self.status = status
+        self.data_criacao = data_criacao
 
 
 class Todos:
     def __init__(self, path="todos.db"):
         self.path = path
 
-    # TODO: DOCUMENT:
-    # Connecting everytime makes sense here
-    # prevents from needing to use `check_same_thread=False`
-    # ensures it's clear, well define, in-and-out behaviour
     def _get_connection(self):
         return sqlite3.connect(self.path)
 
@@ -36,11 +37,10 @@ class Todos:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM todos")
-            untyped_todos = cursor.fetchall()
-            todos = [Todo(*row) for row in untyped_todos]
-            return todos
+            rows = cursor.fetchall()
+            return [Todo(*row) for row in rows]
 
-    def insert(self, titulo: str, descricao: str, is_concluida: bool = False):
+    def insert(self, titulo: str, descricao: str, is_concluida: bool = False) -> None:
         status = "concluida" if is_concluida else "pendente"
         with self._get_connection() as conn:
             conn.execute(
@@ -48,23 +48,32 @@ class Todos:
                 (titulo, descricao, status),
             )
 
-    def delete(self, id: int):
-        with self._get_connection() as conn:
-            conn.execute("DELETE FROM todos WHERE id = ?", (id,))
-
-    def update(self, id: int, novo_titulo: str, nova_descricao: str, is_concluida: bool = False):
+    def update(
+        self,
+        id: int,
+        novo_titulo: str,
+        nova_descricao: str,
+        is_concluida: bool = False,
+    ) -> bool:
         status = "concluida" if is_concluida else "pendente"
+
         with self._get_connection() as conn:
-            conn.execute(
-                "UPDATE todos SET titulo=?, descricao=?, status=? WHERE id=?",
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE todos
+                SET titulo = ?, descricao = ?, status = ?
+                WHERE id = ?
+                """,
                 (novo_titulo, nova_descricao, status, id),
             )
+            return cursor.rowcount > 0
 
-
-if __name__ == "__main__":
-    class_obj = Todos()
-    # class_obj.insert("Teste tit", "teste desc")
-    print(class_obj.get_todos())
-    class_obj.update(1, "Titulo", "desc", True)
-    # class_obj.delete("9")
-    print(class_obj.get_todos())
+    def delete(self, id: int) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM todos WHERE id = ?",
+                (id,),
+            )
+            return cursor.rowcount > 0
