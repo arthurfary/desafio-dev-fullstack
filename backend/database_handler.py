@@ -2,7 +2,7 @@ from datetime import datetime
 import sqlite3
 
 """
-id INTEGER PRIMARY KEY AUTOINCREMENT,
+id INTEGER PRIMARY KEY,
 titulo TEXT,
 descricao TEXT,
 status TEXT CHECK(status IN ('pendente', 'concluida')),
@@ -77,3 +77,4 @@ class Todos:
                 (id,),
             )
             return cursor.rowcount > 0
+

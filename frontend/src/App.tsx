@@ -1,15 +1,16 @@
+
 import { useState, useEffect } from "react";
 import "./App.css";
-import { type Todo, type CreateTodoInput, type UpdateTodoInput } from "./types";
+import type { Todo, CreateTodoInput, UpdateTodoInput } from "./types";
 import TodoForm from "./components/todoForm/TodoForm";
 import TodoList from "./components/TodoList/TodoList";
 
-const API_URL = "http://127.0.0.1:5000/tasks";
+const API_URL: string = "http://127.0.0.1:5000/tasks";
 
 export default function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState<boolean>(false);
 
   useEffect(() => {
     fetchTodos();
@@ -17,32 +18,41 @@ export default function App() {
 
   const fetchTodos = async () => {
     try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
+      const response: Response = await fetch(API_URL);
+      const data: Todo[] = await response.json();
       setTodos(data);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Erro ao carregar tarefas:", error);
     }
   };
 
-  const handleCreate = async (input: CreateTodoInput) => {
+  const handleCreate = async (
+    input: CreateTodoInput
+  ) => {
     try {
       await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
+
       await fetchTodos();
       setShowForm(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Erro ao criar tarefa:", error);
     }
   };
 
-  const handleUpdate = async (id: number, updates: UpdateTodoInput) => {
-    setTodos((prev) =>
-      prev.map((todo) => (todo.id === id ? { ...todo, ...updates } : todo))
+  const handleUpdate = async (
+    id: number,
+    updates: UpdateTodoInput
+  ) => {
+    setTodos((prev: Todo[]): Todo[] =>
+      prev.map((todo: Todo): Todo =>
+        todo.id === id ? { ...todo, ...updates } : todo
+      )
     );
+
     setEditingId(null);
 
     try {
@@ -51,31 +61,41 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Erro ao atualizar tarefa:", error);
       await fetchTodos();
     }
   };
 
   const handleDelete = async (id: number) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
+    setTodos((prev: Todo[]): Todo[] =>
+      prev.filter((todo: Todo): boolean => todo.id !== id)
+    );
 
     try {
       await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Erro ao deletar tarefa:", error);
       await fetchTodos();
     }
   };
 
-  const pendingTodos = todos.filter((todo) => todo.status === "pendente");
-  const completedTodos = todos.filter((todo) => todo.status === "concluida");
+  const pendingTodos: Todo[] = todos.filter(
+    (todo: Todo): boolean => todo.status === "pendente"
+  );
+
+  const completedTodos: Todo[] = todos.filter(
+    (todo: Todo): boolean => todo.status === "concluida"
+  );
 
   return (
     <div className="app">
       <header>
         <h1>Minhas Tarefas</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowForm(!showForm)}
+        >
           {showForm ? "Cancelar" : "Nova Tarefa"}
         </button>
       </header>
@@ -92,7 +112,7 @@ export default function App() {
         <TodoList
           todos={pendingTodos}
           editingId={editingId}
-          onEdit={(todo) => setEditingId(todo.id)}
+          onEdit={(todo: Todo) => setEditingId(todo.id)}
           onDelete={handleDelete}
           onSave={handleUpdate}
           onCancel={() => setEditingId(null)}
@@ -104,7 +124,7 @@ export default function App() {
         <TodoList
           todos={completedTodos}
           editingId={editingId}
-          onEdit={(todo) => setEditingId(todo.id)}
+          onEdit={(todo: Todo) => setEditingId(todo.id)}
           onDelete={handleDelete}
           onSave={handleUpdate}
           onCancel={() => setEditingId(null)}
@@ -113,3 +133,4 @@ export default function App() {
     </div>
   );
 }
+
